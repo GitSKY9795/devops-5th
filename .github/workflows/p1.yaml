@@ -11,5 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Say inline hello with Python
-        run: print("Hello from inline Python step!")
+        run: |
+          print("Hello from inline Python step!")
         shell: python
