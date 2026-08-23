@@ -1,14 +1,15 @@
 name: Step Types
-on: workflow_dispatch:
+on:
+  workflow_dispatch:
 jobs:
-    say-hello-inline:
-        runs-on: ubuntu-latest
-        steps:
-            -name: Say inline hello
-            run: echo "Hello from inline step!"    
-    say-hello-inlinePython:
-        runs-on: ubuntu-latest
-        steps:
-            -name: Say inline hello with Python
-            -run: print("Hello from inline Python step!")         
-            shell: python
+  say-hello-inline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say inline hello
+        run: echo "Hello from inline step!"
+  say-hello-inlinePython:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say inline hello with Python
+        run: print("Hello from inline Python step!")
+        shell: python
