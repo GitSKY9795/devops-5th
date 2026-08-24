@@ -59,14 +59,7 @@ jobs:
       - name: Triage the incident
         run: |
           echo "Triage process initiated for the incident."
-      - name: Checkout the Repo
-        uses: actions/checkout@v3
-      - name: Node.js Setup
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Install Dependencies
-        run: npm install  
+
   scan:
     runs-on: ubuntu-latest
     if: ${{ inputs.deep_scan || inputs.incident_type == 'high' }}
