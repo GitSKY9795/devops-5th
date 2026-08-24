@@ -1,0 +1,32 @@
+name: Using expressions
+run-name: Using Expressions | DEBUG - ${{inputs.debug && 'ON' || 'OFF'}}
+
+on: 
+    workflow_dispatch:
+        inputs:
+            debug:
+                type: boolean
+                default: false
+jobs:
+    echo:
+        runs-on: ubuntu-latest
+        steps:
+            - name: '[Debug] Print start-up data'
+              if: inputs.debug
+              run: |
+                echo "Debug mode is ON"
+                echo "Input debug value: ${{ inputs.debug }}"
+                echo "Run name: ${{ github.run_name }}"   
+                echo "Run ID: ${{ github.run_id }}"
+                echo "Workflow: ${{ github.workflow }}"
+                echo "Repository: ${{ github.repository }}"
+                echo "Actor: ${{ github.actor }}"
+                echo "Event name: ${{ github.event_name }}"
+                echo "Event path: ${{ github.event_path }}"   
+            - name: '[Debug] Print when triggered from main'
+              if: inputs.debug && github.ref == 'refs/heads/main'
+              run: |
+                echo "This workflow was triggered from the main branch."
+            - name: Greeting
+              run: |
+                echo "Hello, ${{ github.actor }}! Welcome to the workflow."
