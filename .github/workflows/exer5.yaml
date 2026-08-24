@@ -1,0 +1,126 @@
+name: The Incident Switchboard
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      incident_type:
+        description: 'Severity of the incident'
+        required: true
+        default: 'low'
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+      deep_scan:
+        description: 'Enable deep scan for the incident'
+        required: false
+        default: false
+        type: boolean
+      skip_tests:
+        description: 'Skip running tests for the incident'
+        required: false
+        default: false
+        type: boolean
+      reason:
+        description: 'Reason for skipping tests'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  incident_response:
+    runs-on: ubuntu-latest
+    steps:
+      - name: The run started by
+        run: |
+          echo "Incident response workflow started by: ${{ github.actor }}"
+          echo "The reference is: ${{ github.ref }}"
+          echo "The event name is: ${{ github.event_name }}"
+          echo "The severity of the incident is: ${{ inputs.incident_type || 'low' }}"
+          echo "Deep scan enabled: ${{ inputs.deep_scan || false }}"
+          echo "Skip tests: ${{ inputs.skip_tests || false }}"
+          echo "Reason for skipping tests: ${{ inputs.reason }}"
+
+      - name: Automatic run without reason
+        if: github.event_name != 'workflow_dispatch'
+        run: echo "The run was automatic and no reason was supplied."
+
+  triage:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_tests }}
+    steps:
+      - name: Triage the incident
+        run: |
+          echo "Triage process initiated for the incident."
+      - name: Checkout the Repo
+        uses: actions/checkout@v3
+      - name: Node.js Setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install Dependencies
+        run: npm install  
+  scan:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deep_scan || inputs.incident_type == 'high' }}
+    steps:
+      - name: Deep Scan
+        run: |
+          echo "Performing a deep scan for the incident."
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Write scan.json
+        env:
+          SEVERITY: ${{ inputs.incident_type || 'low' }}
+          DEEP_SCAN: ${{ inputs.deep_scan || false }}
+          ACTOR: ${{ github.actor }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          jq -n \
+            --arg severity "$SEVERITY" \
+            --argjson deep_scan "$DEEP_SCAN" \
+            --arg actor "$ACTOR" \
+            --argjson run_number "$RUN_NUMBER" \
+            --arg time_utc "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+            '{
+              severity: $severity,
+              deep_scan: $deep_scan,
+              actor: $actor,
+              run_number: $run_number,
+              time_utc: $time_utc
+            }' > scan.json
+
+      - name: Read scan values
+        run: |
+          echo "Severity: $(jq -r '.severity' scan.json)"
+          echo "UTC time: $(jq -r '.time_utc' scan.json)"
+  report:
+    runs-on: ubuntu-latest
+    needs: [incident_response, triage, scan]
+    if: ${{ always() }}
+    steps:
+      - name: Print switchboard summary
+        env:
+          INCIDENT_RESPONSE_RESULT: ${{ needs.incident_response.result }}
+          TRIAGE_RESULT: ${{ needs.triage.result }}
+          SCAN_RESULT: ${{ needs.scan.result }}
+        run: |
+          if [ "$INCIDENT_RESPONSE_RESULT" = "success" ] &&
+             { [ "$TRIAGE_RESULT" = "success" ] || [ "$TRIAGE_RESULT" = "skipped" ]; } &&
+             { [ "$SCAN_RESULT" = "success" ] || [ "$SCAN_RESULT" = "skipped" ]; }; then
+            echo "Summary: everything that ran was successful."
+          else
+            echo "Summary: one or more jobs that ran did not finish successfully."
+          fi
+          echo "Switchboard closed"
