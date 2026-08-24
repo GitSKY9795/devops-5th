@@ -1,18 +1,18 @@
 name: Using expressions
-run-name: Using Expressions | DEBUG - ${{inputs.debug && 'ON' || 'OFF'}}
+run-name: Using Expressions | DEBUG - ${{inputs.debug && 'ON' || 'OFF'}} #to add debug flag to the run name
 
 on: 
     workflow_dispatch:
-        inputs:
-            debug:
+        inputs: #input type for parameters
+            debug: #checkbox named debug
                 type: boolean
                 default: false
 jobs:
     echo:
         runs-on: ubuntu-latest
         steps:
-            - name: '[Debug] Print start-up data'
-              if: inputs.debug
+            - name: '[Debug] Print start-up data' #to normally run the workflow if the bebug is off the values will not be printed and if on then only t he value wil get
+              if: inputs.debug 
               run: |
                 echo "Debug mode is ON"
                 echo "Input debug value: ${{ inputs.debug }}"
