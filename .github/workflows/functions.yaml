@@ -177,7 +177,7 @@ jobs:
         id: test
         run: |
           echo "Running tests..."
-          echo "✅ Tests passed."
+          exit 1
 
       - name: Runs only on failure
         if: ${{ failure() }}
